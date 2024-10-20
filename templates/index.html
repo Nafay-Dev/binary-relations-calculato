@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binary Relations Calculator</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #4b4b8f;
+            margin-bottom: 10px;
+        }
+        input, button {
+            margin: 5px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ced4da;
+            font-size: 1rem;
+        }
+        button {
+            background-color: #4b4b8f;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #343a50;
+        }
+        #output {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        #tree-container {
+            width: 100%;
+            height: 70vh;
+            background-color: #f3f3f3;
+            border-radius: 10px;
+            padding: 20px;
+            overflow: auto;
+        }
+        svg {
+            display: block;
+            margin: auto;
+            background-color: #eaf1f8;
+            border-radius: 10px;
+        }
+        .node circle {
+            fill: #69b3a2;
+            stroke: #343a50;
+            stroke-width: 2px;
+        }
+        .link {
+            stroke: #8c8c8c;
+            stroke-width: 2px;
+        }
+        .info-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+        }
+        .info-section h2 {
+            color: #4b4b8f;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Binary Relations Calculator</h1>
+    <div style="text-align: center;">
+        <input type="text" id="set-a" placeholder="Enter Set A (comma-separated)">
+        <input type="text" id="set-b" placeholder="Enter Set B (comma-separated)">
+        <button onclick="calculate()">Calculate</button>
+    </div>
+    <p id="output">Enter sets and click "Calculate" to view relations.</p>
+    <div id="tree-container">
+        <svg id="tree"></svg>
+    </div>
+
+    <div class="info-section">
+        <h2>About Binary Relations and Bell's Theorem</h2>
+        <p>
+            A <b>binary relation</b> between two sets \(A\) and \(B\) is a collection of ordered pairs, where each pair contains 
+            one element from each set. The total number of possible relations between two sets is determined by 
+            the size of their Cartesian product \(A \times B\), which contains all possible ordered pairs.
+        </p>
+        <p>
+            For sets \(A\) and \(B\) with sizes \( |A| \) and \( |B| \), the total number of possible binary relations 
+            is given by:
+        </p>
+        <p style="text-align: center;">
+            <b>Total Relations = \( 2^{|A| \times |B|} \)</b>
+        </p>
+        <p>
+            This formula arises because each pair in \(A \times B\) can either be included in or excluded from a given relation, 
+            giving two choices for each pair. If \( |A| = 3 \) and \( |B| = 2 \), the Cartesian product has \( 3 \times 2 = 6 \) pairs, 
+            resulting in \( 2^6 = 64 \) possible binary relations.
+        </p>
+
+        <h2>Bell’s Theorem Overview</h2>
+        <p>
+            Bell's theorem, developed by John Bell in 1964, is a fundamental result in quantum mechanics. 
+            It proves that no physical theory of local hidden variables can reproduce all the predictions of quantum mechanics. 
+            While this theorem is beyond the scope of basic binary relations, it draws fascinating connections between probability, 
+            decision-making, and correlations between seemingly independent events.
+        </p>
+        <p>
+            In the context of this calculator, binary relations between sets provide a simpler analogy: just as Bell’s theorem explores 
+            correlations between quantum particles, our calculator explores all possible relations between elements of two sets.
+        </p>
+    </div>
+
+    <script>
+        let root;
+
+        function generateTreeData(elementsA, elementsB) {
+            return {
+                name: 'Relations',
+                children: elementsA.map(a => ({
+                    name: a,
+                    children: elementsB.map(b => ({
+                        name: `${a} ↔ ${b}`
+                    }))
+                }))
+            };
+        }
+
+        async function calculate() {
+            const setA = document.getElementById('set-a').value.split(',');
+            const setB = document.getElementById('set-b').value.split(',');
+
+            root = d3.hierarchy(generateTreeData(setA, setB));
+            root.descendants().forEach(d => (d._children = d.children));
+            drawTree(root);
+
+            document.getElementById('output').innerText =
+                `Total Relations: ${Math.pow(2, setA.length * setB.length)}, Set A Size: ${setA.length}, Set B Size: ${setB.length}`;
+        }
+
+        function drawTree(source) {
+            const width = Math.max(window.innerWidth * 1.2, 1200);
+            const height = Math.max(window.innerHeight * 1.2, 800);
+
+            const svg = d3.select("#tree")
+                .attr("width", width)
+                .attr("height", height);
+
+            svg.selectAll("*").remove();
+
+            const zoom = d3.zoom().scaleExtent([0.5, 2]).on("zoom", (event) => {
+                g.attr("transform", event.transform);
+            });
+            svg.call(zoom);
+
+            const g = svg.append("g").attr("transform", "translate(50,50)");
+
+            const treeLayout = d3.tree().size([width - 100, height - 100]);
+            treeLayout(source);
+
+            const link = g.selectAll(".link")
+                .data(source.links())
+                .enter().append("line")
+                .attr("class", "link")
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            const node = g.selectAll(".node")
+                .data(source.descendants())
+                .enter().append("g")
+                .attr("class", "node")
+                .attr("transform", d => `translate(${d.x},${d.y})`)
+                .on("click", (event, d) => {
+                    toggleChildren(d);
+                    drawTree(source);
+                });
+
+            node.append("circle").attr("r", 8);
+
+            node.append("text")
+                .attr("dx", 12)
+                .attr("dy", 5)
+                .text(d => d.data.name);
+        }
+
+        function toggleChildren(d) {
+            if (d.children) {
+                d._children = d.children;
+                d.children = null;
+            } else {
+                d.children = d._children;
+                d._children = null;
+            }
+        }
+
+        window.addEventListener("resize", () => drawTree(root));
+    </script>
+
+</body>
+</html>
