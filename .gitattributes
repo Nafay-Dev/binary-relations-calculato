@@ -1,0 +1,12 @@
+# Prioritize HTML, CSS, and JS for the front-end
+*.html linguist-detectable=true
+*.css linguist-detectable=true
+*.js linguist-detectable=true
+
+*.py linguist-detectable=true
+
+*.ts linguist-detectable=true
+
+*.yml linguist-detectable=true
+
+*.md linguist-detectable=true
