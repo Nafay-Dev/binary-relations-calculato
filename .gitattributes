@@ -4,4 +4,4 @@
 *.ts linguist-detectable=true
 *.yml linguist-detectable=true
 *.md linguist-detectable=true
-*.py linguist-detectable=false
+*.py linguist-detectable=true
